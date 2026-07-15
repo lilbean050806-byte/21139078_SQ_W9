@@ -2,21 +2,36 @@
 
 ## What This Example Demonstrates
 
-> **Note for students:** This section is included in example files only to help you study. Do not include it in your Side Quest submissions.
+This example is a card guessing game across 3 JSON-driven levels. A card is shown face up — guess whether the next card in the shuffled deck is higher or lower. Reach the target score to advance. Guess wrong and it's game over.
 
-This example introduces a Higher or Lower card guessing game across 3 JSON-driven levels. A card is shown face up — guess whether the next card in the shuffled deck is higher or lower. Reach the target score to advance. Guess wrong and it's game over.
+- **`sketch.js`** — all game logic
+- **`data/level1.json`** — 8 cards, target score 5
+- **`data/level2.json`** — 13 cards, target score 8
+- **`data/level3.json`** — 26 cards (2 suits), target score 12
 
-**This example has no debug panel — adding one is your side quest task.**
+## Debug Panel (Side Quest — Complete)
 
-- **Three JSON levels** — same `loadJSON()` pattern as Example 2; all three files loaded in `preload()` and stored by number in `levelData`
-- **`loadLevel(num)`** — reads the JSON for that level, shuffles the deck with Fisher-Yates, positions the buttons, and resets per-level tracking; same pattern as Example 2
-- **Deck as an array** — the JSON cards array is copied with `.slice()` before shuffling so the original JSON data is never modified; `deckIndex` tracks which card is currently shown
-- **`guess(direction)`** — compares `currentCard.value` and `nextCard.value`; sets `result` and starts `resultTimer`; equal values count as wrong
-- **`resultTimer`** — counts down in `updateResult()` each frame; when it reaches 0 the game either ends, advances to the next level, or shows the next card depending on the result
-- **`setTimeout()`** — same pattern as Example 2; waits 400ms before loading the next level so the player sees the completed state briefly
-- **Progress bar** — `map()` converts `score` to a bar fill width; fills left to right as correct guesses accumulate
-- **Two-column card layout** — current card on the left, face-down next card on the right; both drawn with `drawCard()`
-- **`keyPressed()` is empty** — the comment inside tells you exactly where to add your debug shortcuts
+Press **D** at any time, on any screen, to toggle a debug panel in the top-right corner. It shows the live game state and every shortcut, so nothing needs to be memorized while testing:
+
+- **state** — current game state (start / play / win / over)
+- **level** — current level out of `MAX_LEVELS`
+- **score** — correct guesses this level vs. the target
+- **total** — total correct guesses across the whole run
+- **deck** — position in the shuffled deck
+- **current / next** — the face-up card and the upcoming card
+
+**Keyboard shortcuts**
+
+- **D** — Toggle the debug panel
+- **1** — Jump straight into Level 1
+- **2** — Jump straight into Level 2
+- **3** — Jump straight into Level 3
+- **S** — Jump to the start screen
+- **W** — Jump to the win screen
+- **O** — Jump to the game over screen
+- **N** — Force-deal the next card (skip ahead in the deck)
+
+The level shortcuts (**1**/**2**/**3**) call `loadLevel()` directly and drop you into `STATE_PLAY`, so you can test any level's cards and target score without playing through the ones before it. **S**, **W**, and **O** jump straight to their respective screens for quick visual checks. **N** steps through the current deck one card at a time without needing a correct/incorrect guess, which is handy for confirming deck order and end-of-deck behavior.
 
 ## Setup and Interaction Instructions
 

@@ -6,21 +6,16 @@
 // the deck is higher or lower. Reach the target score to
 // advance to the next level. Guess wrong and it's game over.
 //
-// This example has NO debug panel.
-// Your job in the side quest is to add one.
+// DEBUG PANEL — toggle with D
+//   Press D any time to show/hide a panel with live game
+//   state and a list of every debug shortcut, so you never
+//   have to remember them.
 //
 // FILE STRUCTURE:
 //   sketch.js        — all game logic
 //   data/level1.json — 8 cards, target score 5
 //   data/level2.json — 13 cards, target score 8
 //   data/level3.json — 26 cards (2 suits), target score 12
-//
-// WHAT TO ADD (side quest):
-//   - A debug panel toggled with D
-//   - At least 3 keyboard shortcuts for jumping between
-//     levels and screens without playing through
-//   - Display the shortcuts in the debug panel so you
-//     don't have to remember them
 // ============================================================
 
 // ------------------------------------------------------------
@@ -79,6 +74,23 @@ const RESULT_FRAMES = 45; // how long to show correct/wrong message
 let btnHigher = { x: 0, y: 0, w: 140, h: 50, label: "HIGHER ▲" };
 let btnLower = { x: 0, y: 0, w: 140, h: 50, label: "LOWER  ▼" };
 
+// ------------------------------------------------------------
+// DEBUG PANEL
+// debugMode — toggled with D
+// DEBUG_SHORTCUTS — displayed in the panel so nothing needs
+// to be memorised
+// ------------------------------------------------------------
+let debugMode = false;
+
+const DEBUG_SHORTCUTS = [
+  "D — toggle this debug panel",
+  "1/2/3 — jump to level 1/2/3",
+  "S — jump to the start screen",
+  "W — jump to the win screen",
+  "O — jump to the game over screen",
+  "N — force-deal the next card",
+];
+
 // ============================================================
 // preload()
 // Loads all three level JSON files before the sketch starts.
@@ -113,6 +125,11 @@ function draw() {
     drawWinScreen();
   } else if (gameState === STATE_OVER) {
     drawGameOver();
+  }
+
+  // Debug panel draws on top of everything, on every screen
+  if (debugMode) {
+    drawDebugPanel();
   }
 }
 
@@ -426,10 +443,10 @@ function drawStartScreen() {
   textSize(16);
   text("Click to start", width / 2, height / 2 + 80);
 
-  // Hint for students — no debug panel yet
-  fill(60);
+  // Hint for students
+  fill(90);
   textSize(11);
-  text("No debug panel yet — that's your job!", width / 2, height - 20);
+  text("Press D for the debug panel", width / 2, height - 20);
 }
 
 // ------------------------------------------------------------
@@ -480,6 +497,113 @@ function drawGameOver() {
   text("Click to try again", width / 2, height / 2 + 40);
 }
 
+// ------------------------------------------------------------
+// wrapText(str, maxWidth)
+// Manually splits a string into an array of lines that each
+// fit within maxWidth, based on the currently active font/size.
+// Used so the debug panel never cuts text off — long shortcut
+// descriptions wrap onto a second line instead of running past
+// the edge of the panel.
+// ------------------------------------------------------------
+function wrapText(str, maxWidth) {
+  let words = str.split(" ");
+  let lines = [];
+  let line = "";
+
+  for (let w of words) {
+    let test = line.length ? line + " " + w : w;
+    if (textWidth(test) > maxWidth && line.length) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  if (line.length) lines.push(line);
+  return lines;
+}
+
+// ------------------------------------------------------------
+// drawDebugPanel()
+// Semi-transparent panel in the top-right corner with live
+// game state plus the full list of keyboard shortcuts, so
+// nothing needs to be memorised while testing.
+//
+// Text is wrapped to fit the panel width and the panel is
+// positioned/sized based on its actual content, so nothing
+// gets cut off regardless of canvas size or shortcut length.
+// ------------------------------------------------------------
+function drawDebugPanel() {
+  push();
+
+  let panelW = 300;
+  let panelX = width - panelW - 10;
+  let panelY = 66; // sits below the HUD so it never overlaps it
+  let pad = 14;
+  let lineH = 16;
+  let innerW = panelW - pad * 2;
+
+  textSize(12);
+
+  // --- Build the full list of lines to draw, wrapping as needed ---
+  let stateRows = [
+    "state: " + gameState,
+    "level: " + currentLevel + " / " + MAX_LEVELS,
+    "score: " + score + " / " + targetScore,
+    "total: " + totalScore,
+    "deck: " + deckIndex + " / " + deck.length,
+    "current: " + (currentCard ? currentCard.label + (currentCard.suit || "") : "-"),
+    "next: " + (nextCard ? nextCard.label + (nextCard.suit || "") : "-"),
+  ];
+
+  let shortcutLines = [];
+  for (let shortcut of DEBUG_SHORTCUTS) {
+    shortcutLines = shortcutLines.concat(wrapText(shortcut, innerW));
+  }
+
+  // --- Compute panel height from actual content ---
+  let headerLines = 1; // "DEBUG PANEL (D to hide)"
+  let sectionLabelLines = 1; // "SHORTCUTS"
+  let totalLines =
+    headerLines + stateRows.length + sectionLabelLines + shortcutLines.length;
+  let panelH = pad * 2 + totalLines * lineH + 10; // +10 for gaps between sections
+
+  // --- Background ---
+  fill(0, 0, 0, 230);
+  stroke(90, 200, 140);
+  strokeWeight(1);
+  rect(panelX, panelY, panelW, panelH, 6);
+
+  noStroke();
+  textAlign(LEFT);
+
+  let tx = panelX + pad;
+  let ty = panelY + pad + 4;
+
+  fill(90, 230, 150);
+  text("DEBUG PANEL (D to hide)", tx, ty);
+  ty += lineH + 6;
+
+  fill(220);
+  for (let row of stateRows) {
+    text(row, tx, ty);
+    ty += lineH;
+  }
+  ty += 6;
+
+  fill(90, 230, 150);
+  text("SHORTCUTS", tx, ty);
+  ty += lineH;
+
+  fill(200);
+  for (let line of shortcutLines) {
+    text(line, tx, ty);
+    ty += lineH;
+  }
+
+  pop();
+}
+
 // ============================================================
 // INPUT
 // ============================================================
@@ -510,14 +634,58 @@ function mousePressed() {
 
 // ------------------------------------------------------------
 // keyPressed()
-// No debug shortcuts yet — add them here in the side quest!
-//
-// Hint: use key === "d" || key === "D" to toggle a debug panel.
-// Use key === "1", "2", "3" to jump between levels.
-// Use key === "s" or "w" to jump to start or win screens.
+// Debug shortcuts — active on any screen, any time:
+//   D       — toggle the debug panel
+//   1/2/3   — jump straight into level 1/2/3 (skips the
+//             start screen and resets totalScore only if
+//             coming from the start screen)
+//   S       — jump to the start screen
+//   W       — jump to the win screen
+//   O       — jump to the game over screen
+//   N       — force-deal the next card, useful for quickly
+//             stepping through a level's deck
 // ------------------------------------------------------------
 function keyPressed() {
-  // YOUR DEBUG CODE GOES HERE
+  let k = key.toLowerCase();
+
+  if (k === "d") {
+    debugMode = !debugMode;
+    return;
+  }
+
+  if (k === "1" || k === "2" || k === "3") {
+    let lvl = parseInt(k, 10);
+    loadLevel(lvl);
+    gameState = STATE_PLAY;
+    return;
+  }
+
+  if (k === "s") {
+    gameState = STATE_START;
+    return;
+  }
+
+  if (k === "w") {
+    gameState = STATE_WIN;
+    return;
+  }
+
+  if (k === "o") {
+    gameState = STATE_OVER;
+    return;
+  }
+
+  if (k === "n") {
+    if (gameState === STATE_PLAY && nextCard && result === "") {
+      currentCard = nextCard;
+      deckIndex++;
+      nextCard = deck[deckIndex] || null;
+      if (!nextCard) {
+        gameState = STATE_OVER;
+      }
+    }
+    return;
+  }
 }
 
 // ------------------------------------------------------------
